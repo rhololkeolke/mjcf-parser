@@ -1,3 +1,4 @@
+use crate::error::{MJCFParseError, MJCFParseErrorKind, MJCFParseResult};
 use crate::log;
 use na::Real;
 use nalgebra as na;
@@ -17,7 +18,7 @@ pub struct MJCFModel<N: Real> {
 
 impl<N: Real> MJCFModel<N> {
     // TODO(dschwab): proper return type and error type
-    pub fn parse_xml_string(text: &str) -> Result<MJCFModel<N>, String> {
+    pub fn parse_xml_string(text: &str) -> MJCFParseResult<MJCFModel<N>> {
         let logger = log::LOG.read().unwrap().new(o!());
 
         let mut mjcf_model = MJCFModel {
@@ -31,8 +32,10 @@ impl<N: Real> MJCFModel<N> {
         let doc = match roxmltree::Document::parse(text) {
             Ok(doc) => doc,
             Err(error) => {
-                error!(logger, "Failed to parse XML string. Reason: {:?}", error);
-                return Err(format!("{:?}", error));
+                return Err(MJCFParseError::from(MJCFParseErrorKind::BadXML(format!(
+                    "{}",
+                    error
+                ))));
             }
         };
 
@@ -40,13 +43,10 @@ impl<N: Real> MJCFModel<N> {
 
         // TODO(dschwab): change this to a proper error
         if !root.has_tag_name("mujoco") {
-            error!(
-                logger,
-                "Non 'mujoco' root tag.";
-                "root tag name" => root.tag_name().name());
-            return Err(format!(
-                "Non 'mujoco' root tag. Got {}",
-                root.tag_name().name()
+            return Err(MJCFParseError::from(
+                MJCFParseErrorKind::MissingRequiredTag {
+                    tag_name: String::from("mujoco"),
+                },
             ));
         }
         if let Some(model_name) = root.attribute("model") {
@@ -69,7 +69,7 @@ impl<N: Real> MJCFModel<N> {
         &mut self,
         logger: &slog::Logger,
         worldbody_node: &roxmltree::Node,
-    ) -> Result<(), String> {
+    ) -> Result<(), MJCFParseError> {
         debug!(logger, "Parsing worldbody tag");
         if !worldbody_node.attributes().is_empty() {
             error!(logger, "worldbody has attributes";
