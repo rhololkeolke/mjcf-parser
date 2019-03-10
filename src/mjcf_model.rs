@@ -5,10 +5,11 @@ use ncollide3d::shape::ShapeHandle;
 use nphysics3d::material::MaterialHandle;
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
+use slog::{debug, error, info, o};
 use std::collections::HashMap;
 
 pub struct MJCFModel<N: Real> {
-    model_name: String,
+    pub model_name: String,
     shapes: HashMap<String, ShapeHandle<N>>,
     colliders: HashMap<String, ColliderDesc<N>>,
     materials: HashMap<String, MaterialHandle<N>>,

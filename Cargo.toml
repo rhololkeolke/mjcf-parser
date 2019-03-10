@@ -16,3 +16,7 @@ nphysics3d = "0.10"
 roxmltree = "0.6"
 slog = "2"
 slog-stdlog = "3"
+
+[dev-dependencies]
+slog-async = "2"
+slog-term = "2"
