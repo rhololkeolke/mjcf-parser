@@ -1,3 +1,8 @@
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate slog;
+
 use na::Real;
 use nalgebra as na;
 use ncollide3d::shape::ShapeHandle;
@@ -5,6 +10,8 @@ use nphysics3d::material::MaterialHandle;
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
 use std::collections::HashMap;
+
+pub mod log;
 
 pub struct MJCFModel<N: Real> {
     model_name: String,
