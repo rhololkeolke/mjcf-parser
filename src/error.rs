@@ -13,9 +13,11 @@ pub enum MJCFParseErrorKind {
     #[fail(display = "{}", 0)]
     BadXML(String),
     #[fail(display = "{}", tag_name)]
-    MissingRequiredTag { tag_name: String},
+    MissingRequiredTag { tag_name: String },
     #[fail(display = "worldbody tag has attributes")]
-    WorldBodyHasAttributes
+    WorldBodyHasAttributes,
+    #[fail(display = "worldbody has invalid children")]
+    WorldBodyInvalidChildren,
 }
 
 impl Fail for MJCFParseError {

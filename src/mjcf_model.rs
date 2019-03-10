@@ -6,7 +6,7 @@ use ncollide3d::shape::ShapeHandle;
 use nphysics3d::material::MaterialHandle;
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
-use slog::{debug, error, info, o};
+use slog::{debug, info, o, warn};
 use std::collections::HashMap;
 
 pub struct MJCFModel<N: Real> {
@@ -77,6 +77,22 @@ impl<N: Real> MJCFModel<N> {
             ));
         }
 
+        for child in worldbody_node.children() {
+            match child.tag_name().name() {
+                "inertial" | "joint" | "freejoint" => {
+                    return Err(MJCFParseError::from(
+                        MJCFParseErrorKind::WorldBodyInvalidChildren,
+                    ));
+                }
+                "body" => {}   // TODO(dschwab): Parse me
+                "geom" => {}   // TODO(dschwab): Parse me
+                "site" => {}   // TODO(dschwab): Parse me
+                "camera" => {} // TODO(dschwab): Parse me
+                "light" => {}  // TODO(dschwab): Parse me
+                tag => warn!(logger, "Ignorning unsupported tag"; "tag" => tag),
+            };
+        }
+
         Ok(())
     }
 }
@@ -117,15 +133,57 @@ mod tests {
 
     #[test]
     fn worldbody_has_attributes() {
-        let missing_mujoco_tag = "<mujoco><worldbody name=\"This is illegal\"></worldbody><mujoco>";
+        let xml = "<mujoco><worldbody name=\"This is illegal\"></worldbody><mujoco>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(missing_mujoco_tag);
+        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::WorldBodyHasAttributes => {}
                 _ => panic!("Got unexpected error type {}", error),
             },
-            _ => panic!("Model parse successfully when missing mujoco tag"),
+            _ => panic!("Model parse successfully when worldbody has attributes"),
+        };
+    }
+
+    #[test]
+    fn worldbody_inertial_child_is_invalid() {
+        let xml = "<mujoco><worldbody><inertial></inertial></worldbody></mujoco>";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::WorldBodyInvalidChildren => {}
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parse successfully when worldbody has inertial child"),
+        };
+    }
+
+    #[test]
+    fn worldbody_joint_child_is_invalid() {
+        let xml = "<mujoco><worldbody><joint></joint></worldbody></mujoco>";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::WorldBodyInvalidChildren => {}
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parse successfully when worldbody has joint child"),
+        };
+    }
+
+    #[test]
+    fn worldbody_freejoint_child_is_invalid() {
+        let xml = "<mujoco><worldbody><freejoint></freejoint></worldbody></mujoco>";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::WorldBodyInvalidChildren => {}
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parse successfully when worldbody has freejoint child"),
         };
     }
 }
