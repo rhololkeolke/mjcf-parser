@@ -11,6 +11,9 @@ use nphysics3d::object::ColliderDesc;
 use roxmltree;
 use std::collections::HashMap;
 
+pub mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
 pub mod log;
 
 pub struct MJCFModel<N: Real> {
