@@ -1,11 +1,11 @@
 use crate::built_info;
-use crossbeam::atomic::AtomicCell;
 use slog;
 use slog::Drain;
 use slog_stdlog;
+use std::sync::{Arc, RwLock};
 
 lazy_static! {
-    pub static ref LOG: AtomicCell<slog::Logger> = AtomicCell::new(create_root_logger(None));
+    pub static ref LOG: RwLock<Arc<slog::Logger>> = RwLock::new(Arc::new(create_root_logger(None)));
 }
 
 fn create_root_logger<L: Into<Option<slog::Logger>>>(logger: L) -> slog::Logger {
@@ -19,5 +19,6 @@ fn create_root_logger<L: Into<Option<slog::Logger>>>(logger: L) -> slog::Logger 
 }
 
 pub fn set_root_logger<L: Into<slog::Logger>>(logger: L) {
-    LOG.store(create_root_logger(Some(logger.into())));
+    let mut log = LOG.write().unwrap();
+    *log = Arc::new(create_root_logger(Some(logger.into())));
 }
