@@ -12,9 +12,10 @@ pub enum MJCFParseErrorKind {
     // data contains the displayed roxmltree::Error
     #[fail(display = "{}", 0)]
     BadXML(String),
-    // data specifies tag name
     #[fail(display = "{}", tag_name)]
-    MissingRequiredTag { tag_name: String}
+    MissingRequiredTag { tag_name: String},
+    #[fail(display = "worldbody tag has attributes")]
+    WorldBodyHasAttributes
 }
 
 impl Fail for MJCFParseError {

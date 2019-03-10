@@ -72,8 +72,9 @@ impl<N: Real> MJCFModel<N> {
     ) -> Result<(), MJCFParseError> {
         debug!(logger, "Parsing worldbody tag");
         if !worldbody_node.attributes().is_empty() {
-            error!(logger, "worldbody has attributes";
-                   "worldbody attributes" => ?worldbody_node.attributes());
+            return Err(MJCFParseError::from(
+                MJCFParseErrorKind::WorldBodyHasAttributes,
+            ));
         }
 
         Ok(())
@@ -108,6 +109,20 @@ mod tests {
                 MJCFParseErrorKind::MissingRequiredTag { tag_name } => {
                     assert_eq!(tag_name, "mujoco")
                 }
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parse successfully when missing mujoco tag"),
+        };
+    }
+
+    #[test]
+    fn worldbody_has_attributes() {
+        let missing_mujoco_tag = "<mujoco><worldbody name=\"This is illegal\"></worldbody><mujoco>";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(missing_mujoco_tag);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::WorldBodyHasAttributes => {}
                 _ => panic!("Got unexpected error type {}", error),
             },
             _ => panic!("Model parse successfully when missing mujoco tag"),
