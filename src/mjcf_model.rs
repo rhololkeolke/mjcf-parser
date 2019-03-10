@@ -82,8 +82,35 @@ impl<N: Real> MJCFModel<N> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn parse_malformed_xml() {
+        let bad_xml = "<mujoco";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(bad_xml);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::BadXML(_) => {}
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parsed successfully with bad xml"),
+        };
+    }
+
+    #[test]
+    fn parse_missing_mujoco_tag() {
+        let missing_mujoco_tag = "<foo></foo>";
+
+        let model_result = MJCFModel::<f32>::parse_xml_string(missing_mujoco_tag);
+        match model_result {
+            Err(error) => match error.kind() {
+                MJCFParseErrorKind::MissingRequiredTag { tag_name } => {
+                    assert_eq!(tag_name, "mujoco")
+                }
+                _ => panic!("Got unexpected error type {}", error),
+            },
+            _ => panic!("Model parse successfully when missing mujoco tag"),
+        };
     }
 }
