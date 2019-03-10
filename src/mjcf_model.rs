@@ -5,6 +5,7 @@ use nalgebra as na;
 use ncollide3d::shape::ShapeHandle;
 use nphysics3d::material::MaterialHandle;
 use nphysics3d::object::ColliderDesc;
+use nphysics3d::world::World;
 use roxmltree;
 use slog::{debug, info, o, warn};
 use std::collections::HashMap;
@@ -84,13 +85,148 @@ impl<N: Real> MJCFModel<N> {
                         MJCFParseErrorKind::WorldBodyInvalidChildren,
                     ));
                 }
-                "body" => {}   // TODO(dschwab): Parse me
-                "geom" => {}   // TODO(dschwab): Parse me
+                "body" => {} // TODO(dschwab): Parse me
+                "geom" => self.parse_geom(logger, &child)?,
                 "site" => {}   // TODO(dschwab): Parse me
                 "camera" => {} // TODO(dschwab): Parse me
                 "light" => {}  // TODO(dschwab): Parse me
                 tag => warn!(logger, "Ignorning unsupported tag"; "tag" => tag),
             };
+        }
+
+        Ok(())
+    }
+
+    fn parse_geom(
+        &mut self,
+        logger: &slog::Logger,
+        geom_node: &roxmltree::Node,
+    ) -> Result<(), MJCFParseError> {
+        debug!(logger, "Parsing geom tag");
+
+        let name = match geom_node.attribute("name") {
+            Some(name) => name.to_string(),
+            None => format!("{}", self.shapes.len()),
+        };
+
+        if geom_node.has_attribute("class") {
+            warn!(logger, "class attribute is currently unspported"; "node" => ?geom_node);
+        }
+
+        let shape_handle = match geom_node.attribute("type") {
+            Some("plane") => {}         // TODO(dschwab): implement
+            Some("hfield") => {}        // TODO(dschwab): implement
+            Some("sphere") | None => {} // TODO(dschwab): implement
+            Some("capsule") => {}       // TODO(dschwab): implement
+            Some("ellipsoid") => {}     // TODO(dschwab): implement
+            Some("cylinder") => {}      // TODO(dschwab): implement
+            Some("box") => {}           // TODO(dschwab): implement
+            Some("mesh") => {}          // TODO(dschwab): implement
+            Some(geom_type) => {
+                return Err(MJCFParseError::from(MJCFParseErrorKind::InvalidGeomType {
+                    geom_type: geom_type.to_string(),
+                }));
+            }
+        };
+
+        if geom_node.has_attribute("contype") {
+            warn!(logger, "contype attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("conaffinity") {
+            warn!(logger, "conaffinity attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("condim") {
+            warn!(logger, "condim attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("group") {
+            warn!(logger, "group attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("priority") {
+            warn!(logger, "priority attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("material") {
+            warn!(logger, "material attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("rgba") {
+            warn!(logger, "rgba attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("friction") {
+            warn!(logger, "friction attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("mass") {
+            warn!(logger, "mass attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("density") {
+            warn!(logger, "density attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("solmix") {
+            warn!(logger, "solmix attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("solref") {
+            warn!(logger, "solref attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("solimpl") {
+            warn!(logger, "solimpl attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("margin") {
+            warn!(logger, "margin attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("gap") {
+            warn!(logger, "gap attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("fromto") {
+            warn!(logger, "fromto attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("pos") {
+            warn!(logger, "pos attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("quat") {
+            warn!(logger, "quat attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("axisangle") {
+            warn!(logger, "axisangle attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("xyaxes") {
+            warn!(logger, "xyaxes attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("zaxis") {
+            warn!(logger, "zaxis attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("euler") {
+            warn!(logger, "euler attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("hfield") {
+            warn!(logger, "hfield attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("mesh") {
+            warn!(logger, "mesh attribute is currently unsupported"; "node" => ?geom_node);
+        }
+
+        if geom_node.has_attribute("fitscale") {
+            warn!(logger, "fitscale attribute is currently unsupported"; "node" => ?geom_node);
         }
 
         Ok(())

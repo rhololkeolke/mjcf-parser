@@ -18,6 +18,8 @@ pub enum MJCFParseErrorKind {
     WorldBodyHasAttributes,
     #[fail(display = "worldbody has invalid children")]
     WorldBodyInvalidChildren,
+    #[fail(display = "invalid geom type {}", geom_type)]
+    InvalidGeomType { geom_type: String },
 }
 
 impl Fail for MJCFParseError {
