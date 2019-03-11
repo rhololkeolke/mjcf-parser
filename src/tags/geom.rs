@@ -58,8 +58,37 @@ where
             ShapeHandle::new(shape::Ball::new(radius))
         }
         Some("capsule") => {
-            warn!(logger, "Size currently signored"; "type" => "capsule");
-            ShapeHandle::new(shape::Capsule::new(N::from(0.5), N::from(0.2)))
+            let size_attr = "size";
+            let fromto_attr = "fromto";
+            let (half_length, radius) = match geom_node.attribute(size_attr) {
+                Some(size_text) => {
+                    if geom_node.has_attribute(fromto_attr) {
+                        let sizes: na::Vector1<N> =
+                            attributes::parse_real_vector_attribute(size_text)?;
+
+                        let radius = *sizes.get(0).unwrap();
+
+                        // parse half length from fromto
+                        let fromto: na::Vector6<N> = attributes::parse_real_vector_attribute(
+                            geom_node.attribute(fromto_attr).unwrap(),
+                        )?;
+                        let p0 = fromto.rows(0, 3);
+                        let p1 = fromto.rows(3, 3);
+                        let half_length = p0.metric_distance(&p1) / N::from(2.0);
+
+                        (half_length, radius)
+                    } else {
+                        let sizes: na::Vector2<N> =
+                            attributes::parse_real_vector_attribute(size_text)?;
+                        let radius = *sizes.get(0).unwrap();
+                        let half_length = *sizes.get(1).unwrap();
+
+                        (half_length, radius)
+                    }
+                }
+                None => return Err(GeomError::RequiredAttributeMissing(size_attr.to_string())),
+            };
+            ShapeHandle::new(shape::Capsule::new(half_length, radius))
         }
         Some("ellipsoid") => {
             return Err(GeomError::UnsupportedType {
@@ -72,8 +101,12 @@ where
             });
         }
         Some("box") => {
-            warn!(logger, "Size currently ignored"; "type" => "box");
-            ShapeHandle::new(shape::Cuboid::new(na::Vector3::repeat(N::from(1.0))))
+            let size_attr = "size";
+            let sizes: na::Vector3<N> = match geom_node.attribute(size_attr) {
+                Some(size_text) => attributes::parse_real_vector_attribute(size_text)?,
+                None => return Err(GeomError::RequiredAttributeMissing(size_attr.to_string())),
+            };
+            ShapeHandle::new(shape::Cuboid::new(sizes))
         }
         Some("mesh") => {
             return Err(GeomError::UnsupportedType {
