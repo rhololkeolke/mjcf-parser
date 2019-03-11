@@ -1,5 +1,5 @@
 use mjcf_parser;
-use mjcf_parser::MJCFModel;
+use mjcf_parser::MJCFModelDesc;
 use slog;
 use slog::Drain;
 use slog::{info, o};
@@ -17,7 +17,7 @@ fn main() {
     let logger = slog::Logger::root(drain, o!());
     mjcf_parser::set_root_logger(logger.clone());
 
-    let model = MJCFModel::<f32>::parse_xml_string(EMPTY_MODEL).unwrap();
+    let model = MJCFModelDesc::<f32>::parse_xml_string(EMPTY_MODEL).unwrap();
 
     info!(logger, "Model name: {}", model.model_name);
 

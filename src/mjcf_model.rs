@@ -3,37 +3,31 @@ use crate::log;
 use crate::tags;
 use na::Real;
 use nalgebra as na;
-use ncollide3d::shape::ShapeHandle;
-use nphysics3d::material::MaterialHandle;
-use nphysics3d::object::ColliderDesc;
+use nphysics3d::object::{ColliderDesc, RigidBodyDesc};
 use nphysics3d::world::World;
 use roxmltree;
 use slog::{debug, info, o, warn};
-use std::collections::HashMap;
 use std::str::FromStr;
 
-pub struct MJCFModel<N: Real> {
+pub struct MJCFModelDesc<'a, N: Real> {
     pub model_name: String,
-    shapes: HashMap<String, ShapeHandle<N>>,
-    colliders: HashMap<String, ColliderDesc<N>>,
-    materials: HashMap<String, MaterialHandle<N>>,
+    world_colliders: Vec<ColliderDesc<N>>,
+    world_bodies: Vec<RigidBodyDesc<'a, N>>,
 }
 
-impl<N: Real> MJCFModel<N>
+impl<'a, N: Real> MJCFModelDesc<'a, N>
 where
     N: From<f32>,
     N: FromStr,
     <N as FromStr>::Err: std::fmt::Display,
 {
-    // TODO(dschwab): proper return type and error type
-    pub fn parse_xml_string(text: &str) -> MJCFParseResult<MJCFModel<N>> {
+    pub fn parse_xml_string(text: &str) -> MJCFParseResult<MJCFModelDesc<N>> {
         let logger = log::LOG.read().unwrap().new(o!());
 
-        let mut mjcf_model = MJCFModel {
+        let mut mjcf_model = MJCFModelDesc {
             model_name: String::from("MuJoCo Model"),
-            shapes: HashMap::new(),
-            colliders: HashMap::new(),
-            materials: HashMap::new(),
+            world_colliders: vec![],
+            world_bodies: vec![],
         };
 
         debug!(logger, "Parsing XML string");
@@ -94,8 +88,10 @@ where
                 }
                 "body" => {} // TODO(dschwab): Parse me
                 "geom" => {
-                    tags::geom::parse_geom_node::<N>(logger, &child)?;
+                    self.world_colliders
+                        .push(tags::geom::parse_geom_node::<N>(logger, &child)?);
 
+                    // TODO(dschwab): Remove me after all branches are implemented
                     ()
                 }
                 "site" => {}   // TODO(dschwab): Parse me
@@ -107,6 +103,19 @@ where
 
         Ok(())
     }
+
+    // TODO(dschwab): Create an MJCFModel struct and return that,
+    // which will contain references to the created colliders,
+    // rigidbodies, etc.
+    pub fn build<'w>(&mut self, world: &'w mut World<N>) {
+        for world_collider in &self.world_colliders {
+            world_collider.build(world);
+        }
+
+        for world_body in &mut self.world_bodies {
+            world_body.build(world);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -117,7 +126,7 @@ mod tests {
     fn parse_malformed_xml() {
         let bad_xml = "<mujoco";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(bad_xml);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(bad_xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::BadXML(_) => {}
@@ -131,7 +140,7 @@ mod tests {
     fn parse_missing_mujoco_tag() {
         let missing_mujoco_tag = "<foo></foo>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(missing_mujoco_tag);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(missing_mujoco_tag);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::MissingRequiredTag { tag_name } => {
@@ -147,7 +156,7 @@ mod tests {
     fn worldbody_has_attributes() {
         let xml = "<mujoco><worldbody name=\"This is illegal\"></worldbody><mujoco>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::WorldBodyHasAttributes => {}
@@ -161,7 +170,7 @@ mod tests {
     fn worldbody_inertial_child_is_invalid() {
         let xml = "<mujoco><worldbody><inertial></inertial></worldbody></mujoco>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::WorldBodyInvalidChildren => {}
@@ -175,7 +184,7 @@ mod tests {
     fn worldbody_joint_child_is_invalid() {
         let xml = "<mujoco><worldbody><joint></joint></worldbody></mujoco>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::WorldBodyInvalidChildren => {}
@@ -189,7 +198,7 @@ mod tests {
     fn worldbody_freejoint_child_is_invalid() {
         let xml = "<mujoco><worldbody><freejoint></freejoint></worldbody></mujoco>";
 
-        let model_result = MJCFModel::<f32>::parse_xml_string(xml);
+        let model_result = MJCFModelDesc::<f32>::parse_xml_string(xml);
         match model_result {
             Err(error) => match error.kind() {
                 MJCFParseErrorKind::WorldBodyInvalidChildren => {}

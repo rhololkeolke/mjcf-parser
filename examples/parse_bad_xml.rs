@@ -1,5 +1,5 @@
 use mjcf_parser;
-use mjcf_parser::MJCFModel;
+use mjcf_parser::MJCFModelDesc;
 use slog;
 use slog::Drain;
 use slog::{error, o, warn};
@@ -17,7 +17,7 @@ fn main() {
     let logger = slog::Logger::root(drain, o!());
     mjcf_parser::set_root_logger(logger.clone());
 
-    match MJCFModel::<f32>::parse_xml_string(BAD_XML) {
+    match MJCFModelDesc::<f32>::parse_xml_string(BAD_XML) {
         Ok(_) => warn!(logger, "Successfully parsed bad XML!"),
         Err(error) => error!(logger, "Failed to parse model file"; "reason" => %error),
     };
