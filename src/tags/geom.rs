@@ -49,8 +49,6 @@ where
             });
         }
         Some("sphere") | None => {
-            warn!(logger, "Size currently ignored"; "type" => "sphere");
-
             let size_attr = "size";
             let sizes = match geom_node.attribute(size_attr) {
                 Some(size_text) => attributes::parse_real_vector_attribute::<N, na::U1>(size_text)?,
@@ -158,7 +156,7 @@ where
     }
 
     if geom_node.has_attribute("pos") {
-        warn!(logger, "pos attribute is currently unsupported"; "node" => ?geom_node);
+        warn!(logger, "pos attribute is currently unsupported"; "node" => ?geom_node.attribute("pos"));
     }
 
     if geom_node.has_attribute("quat") {
