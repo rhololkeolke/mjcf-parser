@@ -1,3 +1,4 @@
+use crate::tags;
 use failure::{Backtrace, Context, Fail};
 use std::fmt;
 use std::fmt::Display;
@@ -18,8 +19,8 @@ pub enum MJCFParseErrorKind {
     WorldBodyHasAttributes,
     #[fail(display = "worldbody has invalid children")]
     WorldBodyInvalidChildren,
-    #[fail(display = "invalid geom type {}", geom_type)]
-    InvalidGeomType { geom_type: String },
+    #[fail(display = "{}", 0)]
+    GeomError(#[fail(cause)] tags::geom::GeomError),
 }
 
 impl Fail for MJCFParseError {
@@ -55,6 +56,12 @@ impl From<MJCFParseErrorKind> for MJCFParseError {
 impl From<Context<MJCFParseErrorKind>> for MJCFParseError {
     fn from(inner: Context<MJCFParseErrorKind>) -> MJCFParseError {
         MJCFParseError { inner: inner }
+    }
+}
+
+impl From<tags::geom::GeomError> for MJCFParseError {
+    fn from(geom_error: tags::geom::GeomError) -> MJCFParseError {
+        MJCFParseError::from(MJCFParseErrorKind::GeomError(geom_error))
     }
 }
 
