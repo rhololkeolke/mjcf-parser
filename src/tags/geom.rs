@@ -87,6 +87,20 @@ where
         }
     };
 
+    let mut collider_desc = ColliderDesc::new(shape_handle);
+
+    if let Some(name) = geom_node.attribute("name") {
+        collider_desc.set_name(name.to_owned());
+    }
+
+    if geom_node.has_attribute("pos") {
+        let pos: na::Vector3<N> =
+            attributes::parse_real_vector_attribute(geom_node.attribute("pos").unwrap())?;
+        collider_desc.set_translation(pos);
+    } else {
+        collider_desc.set_translation(na::Vector3::<N>::zeros());
+    }
+
     if geom_node.has_attribute("class") {
         warn!(logger, "class attribute is currently unspported"; "node" => ?geom_node);
     }
@@ -155,10 +169,6 @@ where
         warn!(logger, "fromto attribute is currently unsupported"; "node" => ?geom_node);
     }
 
-    if geom_node.has_attribute("pos") {
-        warn!(logger, "pos attribute is currently unsupported"; "node" => ?geom_node.attribute("pos"));
-    }
-
     if geom_node.has_attribute("quat") {
         warn!(logger, "quat attribute is currently unsupported"; "node" => ?geom_node);
     }
@@ -189,12 +199,6 @@ where
 
     if geom_node.has_attribute("fitscale") {
         warn!(logger, "fitscale attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    let mut collider_desc = ColliderDesc::new(shape_handle);
-
-    if let Some(name) = geom_node.attribute("name") {
-        collider_desc.set_name(name.to_owned());
     }
 
     Ok(collider_desc)
