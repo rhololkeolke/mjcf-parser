@@ -10,6 +10,7 @@ use nphysics3d::world::World;
 use roxmltree;
 use slog::{debug, info, o, warn};
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub struct MJCFModel<N: Real> {
     pub model_name: String,
@@ -21,6 +22,8 @@ pub struct MJCFModel<N: Real> {
 impl<N: Real> MJCFModel<N>
 where
     N: From<f32>,
+    N: FromStr,
+    <N as FromStr>::Err: std::fmt::Display,
 {
     // TODO(dschwab): proper return type and error type
     pub fn parse_xml_string(text: &str) -> MJCFParseResult<MJCFModel<N>> {
