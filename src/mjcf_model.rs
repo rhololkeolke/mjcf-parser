@@ -6,7 +6,7 @@ use nalgebra as na;
 use nphysics3d::object::{ColliderDesc, RigidBodyDesc};
 use nphysics3d::world::World;
 use roxmltree;
-use slog::{debug, info, o, warn};
+use slog::{debug, o, warn};
 use std::str::FromStr;
 
 pub struct MJCFModelDesc<'a, N: Real> {
