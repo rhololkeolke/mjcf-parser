@@ -80,6 +80,10 @@ where
         }
 
         for child in worldbody_node.children() {
+            // skip non-element tags
+            if !child.is_element() {
+                continue;
+            }
             match child.tag_name().name() {
                 "inertial" | "joint" | "freejoint" => {
                     return Err(MJCFParseError::from(
@@ -97,7 +101,7 @@ where
                 "site" => {}   // TODO(dschwab): Parse me
                 "camera" => {} // TODO(dschwab): Parse me
                 "light" => {}  // TODO(dschwab): Parse me
-                tag => warn!(logger, "Ignorning unsupported tag"; "tag" => tag),
+                tag => warn!(logger, "Ignorning unsupported tag"; "child" => tag),
             };
         }
 
