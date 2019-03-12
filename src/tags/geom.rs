@@ -3,10 +3,12 @@ use failure::Fail;
 use nalgebra as na;
 use ncollide3d::shape;
 use ncollide3d::shape::ShapeHandle;
+use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
-use slog::{debug, warn};
+use slog::{trace, warn};
 use std::str::FromStr;
+use crate::user_data::GeomUserData;
 
 #[derive(Clone, PartialEq, Debug, Fail)]
 pub enum GeomError {
@@ -36,6 +38,7 @@ impl From<attributes::ParseOrientationError> for GeomError {
     }
 }
 
+
 pub fn parse_geom_node<N: na::Real>(
     logger: &slog::Logger,
     geom_node: &roxmltree::Node,
@@ -45,7 +48,7 @@ where
     N: FromStr,
     <N as FromStr>::Err: std::fmt::Display,
 {
-    debug!(logger, "Parsing geom tag");
+    trace!(logger, "Parsing geom tag");
 
     let shape_handle: ShapeHandle<N> = match geom_node.attribute("type") {
         Some("plane") => {
@@ -131,6 +134,7 @@ where
     };
 
     let mut collider_desc = ColliderDesc::new(shape_handle);
+    let mut user_data: GeomUserData<N> = Default::default();
 
     if let Some(name) = geom_node.attribute("name") {
         collider_desc.set_name(name.to_owned());
@@ -181,6 +185,42 @@ where
     };
     collider_desc.set_position(na::Isometry3::from_parts(translation, orientation));
 
+    if let Some(density) = geom_node.attribute("density") {
+        let density: na::Vector1<N> = attributes::parse_real_vector_attribute(density)?;
+        collider_desc.set_density(*density.get(0).unwrap());
+    }
+
+    if let Some(margin) = geom_node.attribute("margin") {
+        let margin: na::Vector1<N> = attributes::parse_real_vector_attribute(margin)?;
+        collider_desc.set_margin(*margin.get(0).unwrap());
+    }
+
+    if let Some(friction) = geom_node.attribute("friction") {
+        let friction: na::Vector3<N> = attributes::parse_real_vector_attribute(friction)?;
+        warn!(logger, "Torsional and rolling friction not currently supported. Setting values in user data";
+              "torsional_friction" => %*friction.get(1).unwrap(),
+              "rolling_friction" => %*friction.get(2).unwrap());
+        user_data.torsional_friction = *friction.get(1).unwrap();
+        user_data.rolling_friction = *friction.get(2).unwrap();
+
+        collider_desc.set_material(MaterialHandle::new(BasicMaterial::new(
+            N::from(0.0),
+            *friction.get(0).unwrap(),
+        )));
+    } else {
+        // default value from mujoco xml reference
+        collider_desc.set_material(MaterialHandle::new(BasicMaterial::new(
+            N::from(0.0),
+            N::from(1.0),
+        )));
+    }
+
+    if let Some(rgba) = geom_node.attribute("rgba") {
+        let rgba: na::Vector4<f32> = attributes::parse_real_vector_attribute(rgba)?;
+        warn!(logger, "Currently alpha color values are not supported"; "rgba" => %rgba);
+        user_data.rgba = na::Point4::from(rgba);
+    }    
+
     if geom_node.has_attribute("class") {
         warn!(logger, "class attribute is currently unspported"; "node" => ?geom_node);
     }
@@ -209,20 +249,8 @@ where
         warn!(logger, "material attribute is currently unsupported"; "node" => ?geom_node);
     }
 
-    if geom_node.has_attribute("rgba") {
-        warn!(logger, "rgba attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("friction") {
-        warn!(logger, "friction attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
     if geom_node.has_attribute("mass") {
         warn!(logger, "mass attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("density") {
-        warn!(logger, "density attribute is currently unsupported"; "node" => ?geom_node);
     }
 
     if geom_node.has_attribute("solmix") {
@@ -235,10 +263,6 @@ where
 
     if geom_node.has_attribute("solimpl") {
         warn!(logger, "solimpl attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("margin") {
-        warn!(logger, "margin attribute is currently unsupported"; "node" => ?geom_node);
     }
 
     if geom_node.has_attribute("gap") {
@@ -257,6 +281,7 @@ where
         warn!(logger, "fitscale attribute is currently unsupported"; "node" => ?geom_node);
     }
 
+    collider_desc.set_user_data(Some(user_data));
     Ok(collider_desc)
 }
 
