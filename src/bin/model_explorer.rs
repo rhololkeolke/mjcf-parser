@@ -88,8 +88,8 @@ fn main() {
     // create the testbed
     let mut testbed = Testbed::new(world);
     testbed.look_at(
-        na::Point3::new(0.0, 0.0, 2.0),
-        na::Point3::new(0.0, 0.0, 1.0),
+        na::Point3::new(2.0, 2.0, 2.0),
+        na::Point3::new(0.0, 0.0, 0.0),
     );
     testbed.run();
 
