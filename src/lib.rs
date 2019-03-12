@@ -6,6 +6,7 @@ pub mod error;
 mod log;
 mod mjcf_model;
 mod tags;
+pub mod user_data;
 
 pub use log::{drop_root_logger, set_root_logger};
 pub use mjcf_model::MJCFModelDesc;
