@@ -24,3 +24,7 @@ slog-term = "2"
 
 [dev-dependencies]
 proptest = "0.9"
+
+[features]
+default = []
+trace = ["slog/max_level_trace", "slog/release_max_level_trace"]
