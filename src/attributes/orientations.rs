@@ -95,10 +95,10 @@ where
     if zaxis.is_some() && output.is_some() {
         return Err(ParseOrientationError::MultipleOrientationsSpecified);
     } else if zaxis.is_some() {
-        let default_axis = na::Vector3::<N>::z();
+        let default_axis = na::Vector3::<N>::y();
         let zaxis: na::Vector3<N> = parse_real_vector_attribute(zaxis.unwrap())?;
 
-        output = Some(na::UnitQuaternion::<N>::rotation_between(&default_axis, &zaxis).unwrap());
+        output = na::UnitQuaternion::<N>::rotation_between(&default_axis, &zaxis);
     }
 
     if allow_fromto {
@@ -110,11 +110,11 @@ where
             let p0 = na::Vector3::<N>::from(fromto_values.fixed_rows::<na::U3>(0));
             let p1 = na::Vector3::<N>::from(fromto_values.fixed_rows::<na::U3>(3));
 
-            let default_axis = na::Vector3::<N>::z();
+            let default_axis = na::Vector3::<N>::y();
             let zaxis: na::Vector3<N> = p1 - p0;
+            let zaxis = zaxis.normalize();
 
-            output =
-                Some(na::UnitQuaternion::<N>::rotation_between(&default_axis, &zaxis).unwrap());
+            output = na::UnitQuaternion::<N>::rotation_between(&default_axis, &zaxis);
         }
     } else {
         if node.has_attribute("fromto") {
@@ -276,8 +276,8 @@ mod tests {
         #[test]
         fn parse_zaxis(z_values in proptest::collection::vec(-1.0f32..1.0, 3)) {
             let z_axis = na::Vector3::new(z_values[0], z_values[1], z_values[2]);
-            let default_axis = na::Vector3::z();
-            let expected_quat = na::UnitQuaternion::rotation_between(&default_axis, &z_axis).unwrap();
+            let default_axis = na::Vector3::y();
+            let expected_quat = na::UnitQuaternion::rotation_between(&default_axis, &z_axis).unwrap_or(na::UnitQuaternion::<f32>::identity());
 
             let xml = format!("<geom zaxis=\"{} {} {}\"/>", z_values[0], z_values[1], z_values[2]);
             let doc = roxmltree::Document::parse(&xml)?;
@@ -291,10 +291,9 @@ mod tests {
         fn parse_fromto_when_enabled(fromto in proptest::collection::vec(-10.0f32..10.00, 6)) {
             let p0 = na::Point3::new(fromto[0], fromto[1], fromto[2]);
             let p1 = na::Point3::new(fromto[3], fromto[4], fromto[5]);
-            let z_axis = p1 - p0;
-            prop_assume!(z_axis.magnitude() > 0.5);
-            let default_axis = na::Vector3::z();
-            let expected_quat = na::UnitQuaternion::rotation_between(&default_axis, &z_axis).unwrap();
+            let z_axis = (p1 - p0).normalize();
+            let default_axis = na::Vector3::y();
+            let expected_quat = na::UnitQuaternion::rotation_between(&default_axis, &z_axis).unwrap_or(na::UnitQuaternion::<f32>::identity());
 
             let xml = format!("<geom fromto=\"{} {} {} {} {} {}\"/>", fromto[0], fromto[1], fromto[2], fromto[3], fromto[4], fromto[5]);
             let doc = roxmltree::Document::parse(&xml)?;
