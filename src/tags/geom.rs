@@ -18,11 +18,21 @@ pub enum GeomError {
     RequiredAttributeMissing(String),
     #[fail(display = "Bad attribute values. {}", 0)]
     BadRealAttribute(#[fail(cause)] attributes::ParseRealAttributeError),
+    #[fail(display = "Failed to parse orientation. Reason {}", 0)]
+    BadOrientation(#[fail(cause)] attributes::ParseOrientationError),
+    #[fail(display = "Multiple positions specified")]
+    MultiplePositions,
 }
 
 impl From<attributes::ParseRealAttributeError> for GeomError {
     fn from(error: attributes::ParseRealAttributeError) -> GeomError {
         GeomError::BadRealAttribute(error)
+    }
+}
+
+impl From<attributes::ParseOrientationError> for GeomError {
+    fn from(error: attributes::ParseOrientationError) -> GeomError {
+        GeomError::BadOrientation(error)
     }
 }
 
@@ -126,13 +136,50 @@ where
         collider_desc.set_name(name.to_owned());
     }
 
-    if geom_node.has_attribute("pos") {
-        let pos: na::Vector3<N> =
-            attributes::parse_real_vector_attribute(geom_node.attribute("pos").unwrap())?;
-        collider_desc.set_translation(pos);
-    } else {
-        collider_desc.set_translation(na::Vector3::<N>::zeros());
-    }
+    let translation: na::Translation3<N> = match geom_node.attribute("type") {
+        Some("plane") | Some("sphere") | None => match geom_node.attribute("pos") {
+            Some(pos) => na::Translation3::from(attributes::parse_real_vector_attribute(pos)?),
+            None => na::Translation3::identity(),
+        },
+        Some("capsule") | Some("box") => match geom_node.attribute("fromto") {
+            Some(fromto) => {
+                if geom_node.has_attribute("pos") {
+                    return Err(GeomError::MultiplePositions);
+                } else {
+                    // parse half length from fromto
+                    let fromto: na::Vector6<N> = attributes::parse_real_vector_attribute(fromto)?;
+                    let p0 = na::Point3::from(fromto.fixed_rows::<na::U3>(0).into_owned());
+                    let p1 = na::Point3::from(fromto.fixed_rows::<na::U3>(3).into_owned());
+                    let dir = na::Vector3::from(p1 - p0);
+
+                    let center: na::Point3<N> = p0 + dir * N::from(0.5);
+                    na::Translation3::new(center.x, center.y, center.z)
+                }
+            }
+            None => match geom_node.attribute("pos") {
+                Some(pos) => na::Translation3::from(attributes::parse_real_vector_attribute(pos)?),
+                None => na::Translation3::identity(),
+            },
+        },
+        Some(geom_type) => {
+            return Err(GeomError::InvalidType {
+                geom_type: geom_type.to_string(),
+            });
+        }
+    };
+
+    let orientation: na::UnitQuaternion<N> = match geom_node.attribute("type") {
+        Some("plane") => attributes::parse_orientation_attribute(logger, geom_node, false)?,
+        Some("sphere") | None => attributes::parse_orientation_attribute(logger, geom_node, false)?,
+        Some("capsule") => attributes::parse_orientation_attribute(logger, geom_node, true)?,
+        Some("box") => attributes::parse_orientation_attribute(logger, geom_node, true)?,
+        Some(geom_type) => {
+            return Err(GeomError::InvalidType {
+                geom_type: geom_type.to_string(),
+            });
+        }
+    };
+    collider_desc.set_position(na::Isometry3::from_parts(translation, orientation));
 
     if geom_node.has_attribute("class") {
         warn!(logger, "class attribute is currently unspported"; "node" => ?geom_node);
@@ -196,30 +243,6 @@ where
 
     if geom_node.has_attribute("gap") {
         warn!(logger, "gap attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("fromto") {
-        warn!(logger, "fromto attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("quat") {
-        warn!(logger, "quat attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("axisangle") {
-        warn!(logger, "axisangle attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("xyaxes") {
-        warn!(logger, "xyaxes attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("zaxis") {
-        warn!(logger, "zaxis attribute is currently unsupported"; "node" => ?geom_node);
-    }
-
-    if geom_node.has_attribute("euler") {
-        warn!(logger, "euler attribute is currently unsupported"; "node" => ?geom_node);
     }
 
     if geom_node.has_attribute("hfield") {
