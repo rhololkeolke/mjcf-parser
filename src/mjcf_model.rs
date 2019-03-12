@@ -108,9 +108,6 @@ where
         Ok(())
     }
 
-    // TODO(dschwab): Create an MJCFModel struct and return that,
-    // which will contain references to the created colliders,
-    // rigidbodies, etc.
     pub fn build<'w>(&mut self, world: &'w mut World<N>) {
         for world_collider in &self.world_colliders {
             world_collider.build(world);
