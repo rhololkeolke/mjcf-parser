@@ -23,7 +23,7 @@ impl From<ParseRealAttributeError> for ParseOrientationError {
 /// Geoms and other objects in the MJCF XML have multiple ways of
 /// specifying orientation. This method supports all of them, while
 /// checking that only one of them is used on the tag.
-pub fn parse_orientation_attribute<N: na::Real>(
+pub fn parse_orientation_attribute<N: na::RealField>(
     logger: &slog::Logger,
     node: &roxmltree::Node,
     allow_fromto: bool,

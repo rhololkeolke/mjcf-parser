@@ -16,7 +16,7 @@ pub enum ParseRealAttributeError {
     },
 }
 
-pub fn parse_real_vector_attribute<N: na::Real, D: na::DimName>(
+pub fn parse_real_vector_attribute<N: na::RealField, D: na::DimName>(
     text_attribute: &str,
 ) -> Result<na::VectorN<N, D>, ParseRealAttributeError>
 where

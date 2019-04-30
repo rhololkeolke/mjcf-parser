@@ -39,7 +39,7 @@ impl From<attributes::ParseOrientationError> for GeomError {
 }
 
 
-pub fn parse_geom_node<N: na::Real>(
+pub fn parse_geom_node<N: na::RealField>(
     logger: &slog::Logger,
     geom_node: &roxmltree::Node,
 ) -> Result<ColliderDesc<N>, GeomError>

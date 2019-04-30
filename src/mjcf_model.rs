@@ -1,7 +1,7 @@
 use crate::error::{MJCFParseError, MJCFParseErrorKind, MJCFParseResult};
 use crate::log;
 use crate::tags;
-use na::Real;
+use na::RealField;
 use nalgebra as na;
 use nphysics3d::object::{ColliderDesc, RigidBodyDesc};
 use nphysics3d::world::World;
@@ -9,13 +9,13 @@ use roxmltree;
 use slog::{debug, o, warn};
 use std::str::FromStr;
 
-pub struct MJCFModelDesc<'a, N: Real> {
+pub struct MJCFModelDesc<'a, N: RealField> {
     pub model_name: String,
     world_colliders: Vec<ColliderDesc<N>>,
     world_bodies: Vec<RigidBodyDesc<'a, N>>,
 }
 
-impl<'a, N: Real> MJCFModelDesc<'a, N>
+impl<'a, N: RealField> MJCFModelDesc<'a, N>
 where
     N: From<f32>,
     N: FromStr,

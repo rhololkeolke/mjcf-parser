@@ -1,13 +1,13 @@
 use nalgebra as na;
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct GeomUserData<N: na::Real> {
+pub struct GeomUserData<N: na::RealField> {
     pub torsional_friction: N,
     pub rolling_friction: N,
     pub rgba: na::Point4<f32>,
 }
 
-impl<N: na::Real> Default for GeomUserData<N>
+impl<N: na::RealField> Default for GeomUserData<N>
 where
     N: From<f32>,
 {
