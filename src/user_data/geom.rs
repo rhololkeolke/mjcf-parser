@@ -1,4 +1,5 @@
 use nalgebra as na;
+use nphysics_user_data_traits::HasColor;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct GeomUserData<N: na::RealField> {
@@ -17,5 +18,11 @@ where
             rolling_friction: N::from(0.0001),
             rgba: na::Point4::new(0.5, 0.5, 0.5, 1.0),
         }
+    }
+}
+
+impl<N: na::RealField> HasColor for GeomUserData<N> {
+    fn color(&self) -> na::Point3<f32> {
+        na::Point3::new(self.rgba.x, self.rgba.y, self.rgba.z)
     }
 }
