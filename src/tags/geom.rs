@@ -8,7 +8,8 @@ use ncollide3d::transformation::ToTriMesh;
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
-use slog::{trace, warn};
+#[allow(unused_imports)]
+use slog::{debug, error, info, trace, warn};
 use std::str::FromStr;
 
 #[derive(Clone, PartialEq, Debug, Fail)]
@@ -70,7 +71,8 @@ where
             let radius = *sizes.get(0).unwrap();
             ShapeHandle::new(shape::Ball::new(radius))
         }
-        geom_type @ Some("capsule") | geom_type @ Some("cylinder") => {
+        Some(geom_type) if (geom_type == "capsule" || geom_type == "cylinder") => {
+            debug!(logger, "Parsing capsule/cylinder sizes");
             let size_attr = "size";
             let fromto_attr = "fromto";
             let (half_length, radius) = match geom_node.attribute(size_attr) {
@@ -102,22 +104,23 @@ where
                 None => return Err(GeomError::RequiredAttributeMissing(size_attr.to_string())),
             };
 
-            match geom_type {
-                Some("capsule") => ShapeHandle::new(shape::Capsule::new(half_length, radius)),
-                Some("cylinder") => {
-                    let cyl_trimesh = shape::Cylinder::new(half_length, radius).to_trimesh(32);
-                    ShapeHandle::new(shape::TriMesh::new(
-                        cyl_trimesh.coords,
-                        cyl_trimesh
-                            .indices
-                            .unwrap_unified()
-                            .iter()
-                            .map(na::convert_ref::<na::Point3<u32>, na::Point3<usize>>)
-                            .collect(),
-                        cyl_trimesh.uvs,
-                    ))
-                }
-                _ => unreachable!(),
+            if geom_type == "capsule" {
+                debug!(logger, "Setting capsule shape");
+                ShapeHandle::new(shape::Capsule::new(half_length, radius))
+            } else {
+                debug!(logger, "Setting cylinder shape");
+                let cyl_trimesh = shape::Cylinder::new(half_length, radius).to_trimesh(32);
+                // ShapeHandle::new(shape::TriMesh::new(
+                //     cyl_trimesh.coords,
+                //     cyl_trimesh
+                //         .indices
+                //         .unwrap_unified()
+                //         .iter()
+                //         .map(na::convert_ref::<na::Point3<u32>, na::Point3<usize>>)
+                //         .collect(),
+                //     cyl_trimesh.uvs,
+                // ))
+                ShapeHandle::new(shape::ConvexHull::try_from_points(&cyl_trimesh.coords).unwrap())
             }
         }
         Some("ellipsoid") => {
@@ -157,7 +160,7 @@ where
             Some(pos) => na::Translation3::from(attributes::parse_real_vector_attribute(pos)?),
             None => na::Translation3::identity(),
         },
-        Some("capsule") | Some("box") => match geom_node.attribute("fromto") {
+        Some("capsule") | Some("box") | Some("cylinder") => match geom_node.attribute("fromto") {
             Some(fromto) => {
                 if geom_node.has_attribute("pos") {
                     return Err(GeomError::MultiplePositions);
@@ -187,7 +190,9 @@ where
     let orientation: na::UnitQuaternion<N> = match geom_node.attribute("type") {
         Some("plane") => attributes::parse_orientation_attribute(logger, geom_node, false)?,
         Some("sphere") | None => attributes::parse_orientation_attribute(logger, geom_node, false)?,
-        Some("capsule") => attributes::parse_orientation_attribute(logger, geom_node, true)?,
+        Some("capsule") | Some("cylinder") => {
+            attributes::parse_orientation_attribute(logger, geom_node, true)?
+        }
         Some("box") => attributes::parse_orientation_attribute(logger, geom_node, true)?,
         Some(geom_type) => {
             return Err(GeomError::InvalidType {
