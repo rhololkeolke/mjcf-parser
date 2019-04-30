@@ -55,7 +55,7 @@ impl From<MJCFParseErrorKind> for MJCFParseError {
 
 impl From<Context<MJCFParseErrorKind>> for MJCFParseError {
     fn from(inner: Context<MJCFParseErrorKind>) -> MJCFParseError {
-        MJCFParseError { inner: inner }
+        MJCFParseError { inner }
     }
 }
 

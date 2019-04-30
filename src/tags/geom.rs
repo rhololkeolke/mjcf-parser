@@ -40,6 +40,7 @@ impl From<attributes::ParseOrientationError> for GeomError {
     }
 }
 
+#[allow(clippy::cognitive_complexity)]
 pub fn parse_geom_node<N: na::RealField>(
     logger: &slog::Logger,
     geom_node: &roxmltree::Node,
@@ -169,7 +170,7 @@ where
                     let fromto: na::Vector6<N> = attributes::parse_real_vector_attribute(fromto)?;
                     let p0 = na::Point3::from(fromto.fixed_rows::<na::U3>(0).into_owned());
                     let p1 = na::Point3::from(fromto.fixed_rows::<na::U3>(3).into_owned());
-                    let dir = na::Vector3::from(p1 - p0);
+                    let dir = p1 - p0;
 
                     let center: na::Point3<N> = p0 + dir * N::from(0.5);
                     na::Translation3::new(center.x, center.y, center.z)

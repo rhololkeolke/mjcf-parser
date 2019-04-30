@@ -58,10 +58,9 @@ where
         }
 
         for child in root.children() {
-            match child.tag_name().name() {
-                "worldbody" => mjcf_model.parse_worldbody(&logger, &child)?,
-                _ => {}
-            };
+            if let "worldbody" = child.tag_name().name() {
+                mjcf_model.parse_worldbody(&logger, &child)?;
+            }
         }
 
         Ok(mjcf_model)
@@ -94,9 +93,6 @@ where
                 "geom" => {
                     self.world_colliders
                         .push(tags::geom::parse_geom_node::<N>(logger, &child)?);
-
-                    // TODO(dschwab): Remove me after all branches are implemented
-                    ()
                 }
                 "site" => {}   // TODO(dschwab): Parse me
                 "camera" => {} // TODO(dschwab): Parse me

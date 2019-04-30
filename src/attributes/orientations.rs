@@ -116,10 +116,8 @@ where
 
             output = na::UnitQuaternion::<N>::rotation_between(&default_axis, &zaxis);
         }
-    } else {
-        if node.has_attribute("fromto") {
-            warn!(logger, "allow_fromto is false, but fromto attribute is present."; "node" => ?node);
-        }
+    } else if node.has_attribute("fromto") {
+        warn!(logger, "allow_fromto is false, but fromto attribute is present."; "node" => ?node);
     }
 
     match output {
