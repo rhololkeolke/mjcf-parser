@@ -1,14 +1,15 @@
 use crate::attributes;
+use crate::user_data::GeomUserData;
 use failure::Fail;
 use nalgebra as na;
 use ncollide3d::shape;
 use ncollide3d::shape::ShapeHandle;
+use ncollide3d::transformation::ToTriMesh;
 use nphysics3d::material::{BasicMaterial, MaterialHandle};
 use nphysics3d::object::ColliderDesc;
 use roxmltree;
 use slog::{trace, warn};
 use std::str::FromStr;
-use crate::user_data::GeomUserData;
 
 #[derive(Clone, PartialEq, Debug, Fail)]
 pub enum GeomError {
@@ -37,7 +38,6 @@ impl From<attributes::ParseOrientationError> for GeomError {
         GeomError::BadOrientation(error)
     }
 }
-
 
 pub fn parse_geom_node<N: na::RealField>(
     logger: &slog::Logger,
@@ -70,7 +70,7 @@ where
             let radius = *sizes.get(0).unwrap();
             ShapeHandle::new(shape::Ball::new(radius))
         }
-        Some("capsule") => {
+        geom_type @ Some("capsule") | geom_type @ Some("cylinder") => {
             let size_attr = "size";
             let fromto_attr = "fromto";
             let (half_length, radius) = match geom_node.attribute(size_attr) {
@@ -101,16 +101,28 @@ where
                 }
                 None => return Err(GeomError::RequiredAttributeMissing(size_attr.to_string())),
             };
-            ShapeHandle::new(shape::Capsule::new(half_length, radius))
+
+            match geom_type {
+                Some("capsule") => ShapeHandle::new(shape::Capsule::new(half_length, radius)),
+                Some("cylinder") => {
+                    let cyl_trimesh = shape::Cylinder::new(half_length, radius).to_trimesh(32);
+                    ShapeHandle::new(shape::TriMesh::new(
+                        cyl_trimesh.coords,
+                        cyl_trimesh
+                            .indices
+                            .unwrap_unified()
+                            .iter()
+                            .map(na::convert_ref::<na::Point3<u32>, na::Point3<usize>>)
+                            .collect(),
+                        cyl_trimesh.uvs,
+                    ))
+                }
+                _ => unreachable!(),
+            }
         }
         Some("ellipsoid") => {
             return Err(GeomError::UnsupportedType {
                 geom_type: String::from("ellipsoid"),
-            });
-        }
-        Some("cylinder") => {
-            return Err(GeomError::UnsupportedType {
-                geom_type: String::from("cylinder"),
             });
         }
         Some("box") => {
@@ -219,7 +231,7 @@ where
         let rgba: na::Vector4<f32> = attributes::parse_real_vector_attribute(rgba)?;
         warn!(logger, "Currently alpha color values are not supported"; "rgba" => %rgba);
         user_data.rgba = na::Point4::from(rgba);
-    }    
+    }
 
     if geom_node.has_attribute("class") {
         warn!(logger, "class attribute is currently unspported"; "node" => ?geom_node);
