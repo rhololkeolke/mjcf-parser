@@ -40,7 +40,7 @@ impl From<attributes::ParseOrientationError> for GeomError {
     }
 }
 
-#[allow(clippy::cognitive_complexity)]
+#[allow(clippy::cyclomatic_complexity)]
 pub fn parse_geom_node<N: na::RealField>(
     logger: &slog::Logger,
     geom_node: &roxmltree::Node,
