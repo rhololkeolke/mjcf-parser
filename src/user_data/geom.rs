@@ -1,5 +1,5 @@
 use nalgebra as na;
-use nphysics_user_data_traits::HasColor;
+use nphysics_user_data::HasColor;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct GeomUserData<N: na::RealField> {

@@ -21,7 +21,7 @@ slog = "2"
 slog-stdlog = "3"
 slog-async = "2"
 slog-term = "2"
-nphysics_user_data_traits = { path = "../nphysics_user_data_traits" }
+nphysics_user_data = { path = "../nphysics_user_data" }
 
 [dev-dependencies]
 proptest = "0.9"
