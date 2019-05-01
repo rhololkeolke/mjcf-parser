@@ -1,5 +1,5 @@
 use crate::attributes;
-use crate::user_data::GeomUserData;
+use nphysics_user_data::ColliderUserData;
 use failure::Fail;
 use nalgebra as na;
 use ncollide3d::shape;
@@ -150,7 +150,7 @@ where
     };
 
     let mut collider_desc = ColliderDesc::new(shape_handle);
-    let mut user_data: GeomUserData<N> = Default::default();
+    let mut user_data: ColliderUserData<N> = Default::default();
 
     if let Some(name) = geom_node.attribute("name") {
         collider_desc.set_name(name.to_owned());
@@ -236,7 +236,7 @@ where
     if let Some(rgba) = geom_node.attribute("rgba") {
         let rgba: na::Vector4<f32> = attributes::parse_real_vector_attribute(rgba)?;
         warn!(logger, "Currently alpha color values are not supported"; "rgba" => %rgba);
-        user_data.rgba = na::Point4::from(rgba);
+        user_data.rgba = Some(na::Point4::from(rgba));
     }
 
     if geom_node.has_attribute("class") {

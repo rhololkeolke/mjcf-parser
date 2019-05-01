@@ -39,6 +39,6 @@
     <geom type="capsule" size="0.01" fromto="-1 1 1 -1 -1 1"/>
     <geom type="capsule" size="0.01" fromto="-1 -1 1 1 -1 1"/>
     <geom type="capsule" size="0.01" fromto="1 -1 1 1 1 1"/>
-    <geom type="capsule" size="0.01" fromto="1 1 1 -1 1 1"/>            
+    <geom type="capsule" size="0.01" fromto="1 1 1 -1 1 1"/>
   </worldbody>
 </mujoco>
