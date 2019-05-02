@@ -3,7 +3,7 @@ use crate::log;
 use crate::tags;
 use na::RealField;
 use nalgebra as na;
-use nphysics3d::object::{ColliderDesc, RigidBodyDesc};
+use nphysics3d::object::ColliderDesc;
 use nphysics3d::world::World;
 use roxmltree;
 use slog::{debug, o, warn};
@@ -106,7 +106,6 @@ where
         for world_collider in &self.world_colliders {
             world_collider.build(world);
         }
-
     }
 }
 
