@@ -9,13 +9,12 @@ use roxmltree;
 use slog::{debug, o, warn};
 use std::str::FromStr;
 
-pub struct MJCFModelDesc<'a, N: RealField> {
+pub struct MJCFModelDesc<N: RealField> {
     pub model_name: String,
     world_colliders: Vec<ColliderDesc<N>>,
-    world_bodies: Vec<RigidBodyDesc<'a, N>>,
 }
 
-impl<'a, N: RealField> MJCFModelDesc<'a, N>
+impl<N: RealField> MJCFModelDesc<N>
 where
     N: From<f32>,
     N: FromStr,
@@ -27,7 +26,6 @@ where
         let mut mjcf_model = MJCFModelDesc {
             model_name: String::from("MuJoCo Model"),
             world_colliders: vec![],
-            world_bodies: vec![],
         };
 
         debug!(logger, "Parsing XML string");
@@ -109,9 +107,6 @@ where
             world_collider.build(world);
         }
 
-        for world_body in &mut self.world_bodies {
-            world_body.build(world);
-        }
     }
 }
 
